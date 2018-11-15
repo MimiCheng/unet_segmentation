@@ -1,4 +1,4 @@
-# unet_segmentation
+# Unet_segmentation
 This repository is to predicting whether a CT scan is of a patient who either has or will develop lung cancer within the next 12 months or not.
 To do so, I will use data from LUng Nodule Analysis 2016. The dataset can be found [here](https://luna16.grand-challenge.org/Download/).
 
@@ -10,7 +10,7 @@ The network is trained to segment out potentially cancerous nodules and then use
 * numpy
 * scikit-image
 * scikit-learn
-* keras (tensorflow backend)
+* keras 2 (tensorflow backend)
 * matplotlib
 * pydicom
 * SimpleITK
