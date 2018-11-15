@@ -4,13 +4,17 @@ from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, concatenate,
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras import backend as K
+import os
+from skimage.transform import resize
+from skimage.io import imsave
+
 
 main_path = "/disk1/luna16/"
 working_path = "/disk1/luna16/output/"
 
 K.set_image_dim_ordering('th')  # Theano dimension ordering in this code
-BATCH_SIZE=8
-EPOCHS=100
+BATCH_SIZE=10
+EPOCHS=80
 img_rows = 512
 img_cols = 512
 
@@ -84,12 +88,13 @@ def get_model():
 def train_and_predict(use_existing):
     print('-' * 30)
     print('Loading and preprocessing train data...')
-
+    print ('BATCH_SIZE : {}'.format(BATCH_SIZE))
+    print ('EPOCHS : {}'.format(EPOCHS))
     imgs_train = np.load(main_path + "trainImages.npy").astype(np.float32)
     imgs_mask_train = np.load(main_path + "trainMasks.npy").astype(np.float32)
     
-    imgs_val = np.load(main_path + "valImages.npy").astype(np.float32)
-    imgs_mask_val = np.load(main_path + "valMasks.npy").astype(np.float32)
+#     imgs_val = np.load(main_path + "valImages.npy").astype(np.float32)
+#     imgs_mask_val = np.load(main_path + "valMasks.npy").astype(np.float32)
     
     imgs_test = np.load(main_path + "testImages.npy").astype(np.float32)
     imgs_mask_test_true = np.load(main_path + "testMasks.npy").astype(np.float32)
@@ -105,8 +110,9 @@ def train_and_predict(use_existing):
 
     model = get_model()
     # Saving weights to unet.hdf5 at checkpoints
-    model_checkpoint = ModelCheckpoint('../model/best_unet_{}.hdf5'.format(BATCH_SIZE), monitor='loss', save_best_only=True)
-    tb = TensorBoard(log_dir="../logs_16", batch_size=BATCH_SIZE)
+    best_weight_path = '../model/best_unet_{}.hdf5'.format(BATCH_SIZE)
+    model_checkpoint = ModelCheckpoint(best_weight_path, monitor='val_loss', save_best_only=True)
+    tb = TensorBoard(log_dir="../logs_10", batch_size=BATCH_SIZE)
     # Set argument for call to train_and_predict to true at end of script
     if use_existing:
         print('loading weights...')
@@ -116,7 +122,7 @@ def train_and_predict(use_existing):
     print('Fitting model...')
 
     model.fit(imgs_train, imgs_mask_train, 
-              validation_data=(imgs_val, imgs_mask_val),
+              validation_split=0.15,
               batch_size=BATCH_SIZE, 
               epochs=EPOCHS, 
               verbose=1, shuffle=True,
@@ -127,7 +133,7 @@ def train_and_predict(use_existing):
     print('-' * 30)
     print('Loading saved weights...')
 
-    model.load_weights('../unet.hdf5')
+    model.load_weights(best_weight_path)
 
     print('-' * 30)
     print('Predicting masks on test data...')
@@ -136,7 +142,21 @@ def train_and_predict(use_existing):
     imgs_mask_test = np.ndarray([num_test, 1, 512, 512], dtype=np.float32)
     for i in range(num_test):
         imgs_mask_test[i] = model.predict([imgs_test[i:i + 1]], verbose=0)[0]
-    np.save('../masksTestPredicted.npy', imgs_mask_test)
+    np.save('../masks_mask_test.npy', imgs_mask_test)
+    
+    print('-' * 30)
+    print('Saving predicted masks to files...')
+
+    pred_dir = 'preds'
+    if not os.path.exists(pred_dir):
+        os.mkdir(pred_dir)
+    for image, image_id in zip(imgs_mask_test, imgs_id_test):
+        image = (image[:, :, 0] * 255.).astype(np.uint8)
+        imsave(os.path.join(pred_dir, str(image_id) + '_pred.png'), image)\
+        
+    print('-' * 30)
+    print('Calculate mean dice coeff...')
+    
     mean = 0.0
     for i in range(num_test):
         mean += dice_coef_np(imgs_mask_test_true[i, 0], imgs_mask_test[i, 0])
