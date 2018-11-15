@@ -5,10 +5,11 @@ from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras import backend as K
 
+main_path = "/disk1/luna16/"
 working_path = "/disk1/luna16/output/"
 
 K.set_image_dim_ordering('th')  # Theano dimension ordering in this code
-BATCH_SIZE=4
+BATCH_SIZE=8
 EPOCHS=100
 img_rows = 512
 img_cols = 512
@@ -74,7 +75,7 @@ def get_model():
     conv10 = Conv2D(1, (1, 1), activation='sigmoid')(conv9)
 
     model = Model(inputs=inputs, outputs=conv10)
-
+    print (model.summary())
     model.compile(optimizer=Adam(lr=1.0e-5), loss=dice_coef_loss, metrics=[dice_coef])
 
     return model
@@ -84,11 +85,14 @@ def train_and_predict(use_existing):
     print('-' * 30)
     print('Loading and preprocessing train data...')
 
-    imgs_train = np.load(working_path + "trainImages.npy").astype(np.float32)
-    imgs_mask_train = np.load(working_path + "trainMasks.npy").astype(np.float32)
-
-    imgs_test = np.load(working_path + "testImages.npy").astype(np.float32)
-    imgs_mask_test_true = np.load(working_path + "testMasks.npy").astype(np.float32)
+    imgs_train = np.load(main_path + "trainImages.npy").astype(np.float32)
+    imgs_mask_train = np.load(main_path + "trainMasks.npy").astype(np.float32)
+    
+    imgs_val = np.load(main_path + "valImages.npy").astype(np.float32)
+    imgs_mask_val = np.load(main_path + "valMasks.npy").astype(np.float32)
+    
+    imgs_test = np.load(main_path + "testImages.npy").astype(np.float32)
+    imgs_mask_test_true = np.load(main_path + "testMasks.npy").astype(np.float32)
 
     mean = np.mean(imgs_train)  # mean for data centering
     std = np.std(imgs_train)  # std for data normalization
@@ -101,24 +105,29 @@ def train_and_predict(use_existing):
 
     model = get_model()
     # Saving weights to unet.hdf5 at checkpoints
-    model_checkpoint = ModelCheckpoint('../model/best_unet.hdf5', monitor='loss', save_best_only=True)
-    tb = TensorBoard(log_dir="../logs", batch_size=BATCH_SIZE)
+    model_checkpoint = ModelCheckpoint('../model/best_unet_{}.hdf5'.format(BATCH_SIZE), monitor='loss', save_best_only=True)
+    tb = TensorBoard(log_dir="../logs_16", batch_size=BATCH_SIZE)
     # Set argument for call to train_and_predict to true at end of script
     if use_existing:
         print('loading weights...')
-        model.load_weights('./unet.hdf5')
+        model.load_weights('../unet.hdf5')
 
     print('-' * 30)
     print('Fitting model...')
 
-    model.fit(imgs_train, imgs_mask_train, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, shuffle=True,
-              callbacks=[model_checkpoint, tb])
+    model.fit(imgs_train, imgs_mask_train, 
+              validation_data=(imgs_val, imgs_mask_val),
+              batch_size=BATCH_SIZE, 
+              epochs=EPOCHS, 
+              verbose=1, shuffle=True,
+              callbacks=[model_checkpoint,tb])
+
 
     # loading best weights from training session
     print('-' * 30)
     print('Loading saved weights...')
 
-    model.load_weights('./unet.hdf5')
+    model.load_weights('../unet.hdf5')
 
     print('-' * 30)
     print('Predicting masks on test data...')

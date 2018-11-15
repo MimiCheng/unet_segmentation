@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans
 from skimage.transform import resize
 from glob import glob
 
+main_path = "/disk1/luna16/"
 working_path = "/disk1/luna16/output/"
 file_list = glob(working_path + "images_*.npy")
 
@@ -169,9 +170,15 @@ for i in range(num_images):
     final_masks[i, 0] = out_nodemasks[i]
 
 rand_i = np.random.choice(range(num_images), size=num_images, replace=False)
-test_i = int(0.2 * num_images)
-np.save(working_path + "trainImages.npy", final_images[rand_i[test_i:]])
-np.save(working_path + "trainMasks.npy", final_masks[rand_i[test_i:]])
-np.save(working_path + "testImages.npy", final_images[rand_i[:test_i]])
-np.save(working_path + "testMasks.npy", final_masks[rand_i[:test_i]])
+test_i = int(0.2*num_images)
+val_i = int(0.1*num_images)
+
+np.save(main_path+"trainImages.npy",final_images[rand_i[test_i:]])
+np.save(main_path+"trainMasks.npy",final_masks[rand_i[test_i:]])
+
+np.save(main_path+"valImages.npy",final_images[rand_i[val_i:test_i]])
+np.save(main_path+"valMasks.npy",final_masks[rand_i[val_i:test_i]])
+
+np.save(main_path+"testImages.npy",final_images[rand_i[:val_i]])
+np.save(main_path+"testMasks.npy",final_masks[rand_i[:val_i]])
 print('process done...')
