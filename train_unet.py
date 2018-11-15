@@ -13,7 +13,7 @@ main_path = "/disk1/luna16/"
 working_path = "/disk1/luna16/output/"
 
 K.set_image_dim_ordering('th')  # Theano dimension ordering in this code
-BATCH_SIZE=10
+BATCH_SIZE=16
 EPOCHS=80
 img_rows = 512
 img_cols = 512
@@ -36,7 +36,7 @@ def dice_coef_np(y_true, y_pred):
 
 
 def dice_coef_loss(y_true, y_pred):
-    return -dice_coef(y_true, y_pred)
+    return 1 - dice_coef(y_true, y_pred)
 
 
 def get_model():
@@ -112,7 +112,7 @@ def train_and_predict(use_existing):
     # Saving weights to unet.hdf5 at checkpoints
     best_weight_path = '../model/best_unet_{}.hdf5'.format(BATCH_SIZE)
     model_checkpoint = ModelCheckpoint(best_weight_path, monitor='val_loss', save_best_only=True)
-    tb = TensorBoard(log_dir="../logs_10", batch_size=BATCH_SIZE)
+    tb = TensorBoard(log_dir="../logs", batch_size=BATCH_SIZE)
     # Set argument for call to train_and_predict to true at end of script
     if use_existing:
         print('loading weights...')
@@ -144,16 +144,6 @@ def train_and_predict(use_existing):
         imgs_mask_test[i] = model.predict([imgs_test[i:i + 1]], verbose=0)[0]
     np.save('../masks_mask_test.npy', imgs_mask_test)
     
-    print('-' * 30)
-    print('Saving predicted masks to files...')
-
-    pred_dir = 'preds'
-    if not os.path.exists(pred_dir):
-        os.mkdir(pred_dir)
-    for image, image_id in zip(imgs_mask_test, imgs_id_test):
-        image = (image[:, :, 0] * 255.).astype(np.uint8)
-        imsave(os.path.join(pred_dir, str(image_id) + '_pred.png'), image)\
-        
     print('-' * 30)
     print('Calculate mean dice coeff...')
     
