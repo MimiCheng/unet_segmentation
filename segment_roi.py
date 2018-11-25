@@ -24,10 +24,9 @@ for img_file in file_list:
         # Find the average pixel value near the lungs
         # to renormalize washed out images
         middle = img[100:400, 100:400]
-        
-#         mean = np.mean(middle)
-#         max = np.max(img)
-#         min = np.min(img)
+        mean = np.mean(middle)
+        max = np.max(img)
+        min = np.min(img)
 
 
         # To improve threshold finding, I'm moving the
