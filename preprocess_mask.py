@@ -59,12 +59,21 @@ Returns uint16 version
     matrix = matrix-m_min
     return(np.array(np.rint( (matrix-m_min)/float(m_max-m_min) * 65535.0),dtype=np.uint16))
 
+
 ############
+def normalizePlanes(npzarray):
+    maxHU = 400.
+    minHU = -1000.
+    npzarray = (npzarray - minHU) / (maxHU - minHU)
+    npzarray[npzarray>1] = 1.
+    npzarray[npzarray<0] = 0.
+    npzarray *= 255
+    return npzarray.astype(int)
 #
 # Getting list of image files
 luna_path = "/disk1/luna16/data/"
 luna_subset_path = luna_path+"alldata/"
-output_path = "/disk1/luna16/output/"
+output_path = "/disk1/luna16/output2/"
 file_list=glob(luna_subset_path+"*.mhd")
 
 
@@ -109,7 +118,8 @@ for fcount, img_file in enumerate(tqdm(file_list)):
                 mask = make_mask(center, diam, i_z*spacing[2]+origin[2],
                                  width, height, spacing, origin)
                 masks[i] = mask
-                imgs[i] = img_array[i_z]
+#                 imgs[i] = img_array[i_z]
+                masks[i] = normalizePlanes(img_array[i_z])
             np.save(os.path.join(output_path,"images_%04d_%04d.npy" % (fcount, node_idx)),imgs)
             np.save(os.path.join(output_path,"masks_%04d_%04d.npy" % (fcount, node_idx)),masks)
             print('done saving images/masks_%04d_%04d' % (fcount, node_idx))

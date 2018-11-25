@@ -6,7 +6,7 @@ from skimage.transform import resize
 from glob import glob
 
 main_path = "/disk1/luna16/"
-working_path = "/disk1/luna16/output/"
+working_path = "/disk1/luna16/output2/"
 file_list = glob(working_path + "images_*.npy")
 
 for img_file in file_list:
@@ -24,9 +24,12 @@ for img_file in file_list:
         # Find the average pixel value near the lungs
         # to renormalize washed out images
         middle = img[100:400, 100:400]
-        mean = np.mean(middle)
-        max = np.max(img)
-        min = np.min(img)
+        
+#         mean = np.mean(middle)
+#         max = np.max(img)
+#         min = np.min(img)
+
+
         # To improve threshold finding, I'm moving the
         # underflow and overflow on the pixel spectrum
         img[img == max] = mean
