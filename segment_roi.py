@@ -28,6 +28,10 @@ for img_file in file_list:
         mean = np.mean(middle)
         max = np.max(img)
         min = np.min(img)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
 
         # To improve threshold finding, I'm moving the
         # underflow and overflow on the pixel spectrum
