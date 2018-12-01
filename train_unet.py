@@ -9,11 +9,19 @@ from skimage.transform import resize
 from skimage.io import imsave
 
 K.set_image_dim_ordering('th')  # Theano dimension ordering in this code
+<<<<<<< HEAD
+=======
+main_path = "/disk1/luna16/"
+>>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
 working_path = "/disk1/luna16/output/"
 main_path = "/disk1/luna16/"
 unet_weight = "/root/sharedfolder/luna16/unet.hdf5"
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
 BATCH_SIZE=8
 EPOCHS=60
 img_rows = 512
@@ -136,6 +144,54 @@ def get_unet():
     return model
 
 
+def get_unet():
+    
+    K.set_image_dim_ordering('th')  # Theano dimension ordering in this code
+    inputs = Input((1, img_rows, img_cols))
+
+    conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
+    conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
+    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+
+    conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
+    conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv2)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+
+    conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
+    conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+
+    conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
+    conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
+
+    conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
+    conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+
+    up6 = concatenate([Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=1)
+    conv6 = Conv2D(256, (3, 3), activation='relu', padding='same')(up6)
+    conv6 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv6)
+
+    up7 = concatenate([Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=1)
+    conv7 = Conv2D(128, (3, 3), activation='relu', padding='same')(up7)
+    conv7 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv7)
+
+    up8 = concatenate([Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=1)
+    conv8 = Conv2D(64, (3, 3), activation='relu', padding='same')(up8)
+    conv8 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv8)
+
+    up9 = concatenate([Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=1)
+    conv9 = Conv2D(32, (3, 3), activation='relu', padding='same')(up9)
+    conv9 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv9)
+
+    conv10 = Conv2D(1, (1, 1), activation='sigmoid')(conv9)
+
+    model = Model(inputs=[inputs], outputs=[conv10])
+    print (model.summary())
+    model.compile(optimizer=Adam(lr=1e-5), loss=dice_coef_loss, metrics=[dice_coef])
+
+    return model
+
 def train_and_predict(use_existing):
     print('-' * 30)
     print('Loading and preprocessing train data...')
@@ -161,9 +217,15 @@ def train_and_predict(use_existing):
 
     model = get_model()
     # Saving weights to unet.hdf5 at checkpoints
+<<<<<<< HEAD
     best_weight_path = '/root/sharedfolder/luna16/model/best_unet_upsampling.hdf5'
     model_checkpoint = ModelCheckpoint(best_weight_path, monitor='val_loss', save_best_only=True)
     tb = TensorBoard(log_dir="../logs_281118", batch_size=BATCH_SIZE)
+=======
+    best_weight_path = '../model/best_unet_upsampling_{}.hdf5'.format(BATCH_SIZE)
+    model_checkpoint = ModelCheckpoint(best_weight_path, monitor='val_loss', save_best_only=True)
+    tb = TensorBoard(log_dir="../logs_upsampling", batch_size=BATCH_SIZE)
+>>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
     # Set argument for call to train_and_predict to true at end of script
     if use_existing:
         print('loading weights...')
@@ -184,7 +246,11 @@ def train_and_predict(use_existing):
     print('-' * 30)
     print('Loading saved weights...')
 
+<<<<<<< HEAD
     model.load_weights(unet_weight)
+=======
+    model.load_weights(best_weight_path)
+>>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
 
     print('-' * 30)
     print('Predicting masks on test data...')
@@ -193,6 +259,7 @@ def train_and_predict(use_existing):
     imgs_mask_test = np.ndarray([num_test, 1, 512, 512], dtype=np.float32)
     for i in range(num_test):
         imgs_mask_test[i] = model.predict([imgs_test[i:i + 1]], verbose=0)[0]
+<<<<<<< HEAD
     np.save('../masksTestPredictedAll.npy', imgs_mask_test)
     
 #     print('-' * 30)
@@ -202,6 +269,17 @@ def train_and_predict(use_existing):
 #     for i in range(num_test):
 #         mean += dice_coef_np(imgs_mask_test_true[i, 0], imgs_mask_test[i, 0])
 #     mean /= num_test
+=======
+    np.save('../masks_mask_test.npy', imgs_mask_test)
+    
+    print('-' * 30)
+    print('Calculate mean dice coeff...')
+    
+    mean = 0.0
+    for i in range(num_test):
+        mean += dice_coef_np(imgs_mask_test_true[i, 0], imgs_mask_test[i, 0])
+    mean /= num_test
+>>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
 
 #     print("Mean Dice Coeff : ", mean)
 

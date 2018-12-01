@@ -29,6 +29,10 @@ for img_file in file_list:
         max = np.max(img)
         min = np.min(img)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
 =======
 
 >>>>>>> 96a5d5ce46bc223804d4a8d59249ebf2592973fd
