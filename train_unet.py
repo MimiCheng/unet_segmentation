@@ -9,8 +9,9 @@ from skimage.transform import resize
 from skimage.io import imsave
 
 K.set_image_dim_ordering('th')  # Theano dimension ordering in this code
-main_path = "/disk1/luna16/"
 working_path = "/disk1/luna16/output/"
+main_path = "/disk1/luna16/"
+unet_weight = "/root/sharedfolder/luna16/unet.hdf5"
 
 
 BATCH_SIZE=8
@@ -81,8 +82,8 @@ def get_model():
 
     model = Model(inputs=inputs, outputs=conv10)
     print (model.summary())
-    model.compile(optimizer=Adam(lr=1.0e-5), loss=dice_coef_loss, metrics=[dice_coef])
-
+#     model.compile(optimizer=Adam(lr=1.0e-5), loss=dice_coef_loss, metrics=[dice_coef])
+    model.compile(optimizer=Adam(lr=1e-5), loss='binary_crossentropy', metrics = ['accuracy'])
     return model
 
 
@@ -134,6 +135,7 @@ def get_unet():
 
     return model
 
+
 def train_and_predict(use_existing):
     print('-' * 30)
     print('Loading and preprocessing train data...')
@@ -159,13 +161,13 @@ def train_and_predict(use_existing):
 
     model = get_model()
     # Saving weights to unet.hdf5 at checkpoints
-    best_weight_path = '../model/best_unet_upsampling_{}.hdf5'.format(BATCH_SIZE)
+    best_weight_path = '/root/sharedfolder/luna16/model/best_unet_upsampling.hdf5'
     model_checkpoint = ModelCheckpoint(best_weight_path, monitor='val_loss', save_best_only=True)
-    tb = TensorBoard(log_dir="../logs_upsampling", batch_size=BATCH_SIZE)
+    tb = TensorBoard(log_dir="../logs_281118", batch_size=BATCH_SIZE)
     # Set argument for call to train_and_predict to true at end of script
     if use_existing:
         print('loading weights...')
-        model.load_weights('../unet.hdf5')
+        model.load_weights(unet_weight)
 
     print('-' * 30)
     print('Fitting model...')
@@ -182,7 +184,7 @@ def train_and_predict(use_existing):
     print('-' * 30)
     print('Loading saved weights...')
 
-    model.load_weights(best_weight_path)
+    model.load_weights(unet_weight)
 
     print('-' * 30)
     print('Predicting masks on test data...')
@@ -191,17 +193,17 @@ def train_and_predict(use_existing):
     imgs_mask_test = np.ndarray([num_test, 1, 512, 512], dtype=np.float32)
     for i in range(num_test):
         imgs_mask_test[i] = model.predict([imgs_test[i:i + 1]], verbose=0)[0]
-    np.save('../masks_mask_test.npy', imgs_mask_test)
+    np.save('../masksTestPredictedAll.npy', imgs_mask_test)
     
-    print('-' * 30)
-    print('Calculate mean dice coeff...')
+#     print('-' * 30)
+#     print('Calculate mean dice coeff...')
     
-    mean = 0.0
-    for i in range(num_test):
-        mean += dice_coef_np(imgs_mask_test_true[i, 0], imgs_mask_test[i, 0])
-    mean /= num_test
+#     mean = 0.0
+#     for i in range(num_test):
+#         mean += dice_coef_np(imgs_mask_test_true[i, 0], imgs_mask_test[i, 0])
+#     mean /= num_test
 
-    print("Mean Dice Coeff : ", mean)
+#     print("Mean Dice Coeff : ", mean)
 
 if __name__ == '__main__':
     train_and_predict(True)
